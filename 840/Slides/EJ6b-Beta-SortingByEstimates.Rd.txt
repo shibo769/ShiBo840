@@ -1,0 +1,86 @@
+
+#	Understanding that when we sort on the basis of estimates
+#	we necessarily sort (partially) on the basis of realized
+#	estimation errors.
+
+
+# Sorting stocks on the basis of estimated parameters
+# is routinely done in quant. finance
+#	academics test anomalies
+#	practitioners test trading rules or portfolio strategies
+
+
+#  SORTING STOCKS ON ESTIMATEs of BETA
+#  after the market model regression
+freq <- 12
+mum  <- 0.08/freq			# Typical Risk Premium
+sigm <- 0.15/sqrt(freq)		# Typical Market std. dev.
+sigstock<- 0.25/sqrt(freq)	# Typical Stock Standard Deviation
+
+nyear <- 1
+TT    <- nyear*freq				
+
+beta <- 1
+Rsq <- (beta*sigm / sigstock)^2 	# Typical R-square
+Rsq
+
+vareps <- sigstock^2 * (1-Rsq)
+sqrt(vareps)		# Typical residual std. dev. of a regression
+
+# var(beta_hat) = sigeps^2 / (TT*var(Rm-Rf))	
+
+sigbeta<- sqrt(vareps / (TT*sigm^2) )
+sigbeta
+
+# Simulate beta_hats and sort them
+
+nstocks<-2000
+betavec<-sort(rnorm(nstocks,1,sigbeta))		# Remember, True betas are all 1
+
+hist(betavec,nclass=50,prob=T,main="");box()
+title("Estimated betas for T=104, if true betas are all 1")
+
+# Now make portfolios on the basis of beta-hat
+# Why do we make portfolios?
+
+npor <- 40
+spp  <-nstocks/npor;  spp		# stocks per portfolios
+
+#
+# If the beta-hats are NOT correlated across stocks
+# By how much did we reduce the variance of beta-hat
+# If there are N stocks in the portfolio
+# 	v(betaport-hat) = (1/N^2) * (N v(betastock-hat))
+#
+# How do we compute this if they are correlated
+#		Use the SUR formula !
+
+sigbetport<-sigbeta / sqrt(spp)
+sigbetport
+
+# So the portfolio betas will be much more precisely estimated
+# than the stock betas
+
+# Make the portfolios
+# And Look at their estimated betas
+
+betaport<-rep(0,npor)
+for (i in 1:npor){
+	ibeg<-(1+(i-1)*spp)
+	iend<-(spp+(i-1)*spp)
+	betaport[i]<-mean(betavec[ibeg:iend])
+	}
+
+round(betaport,2)
+
+# We sorted on the basis of estimation errors!
+
+# What will happen if we use these betas on the right hand side of 
+# the second pass cross-sectional regression
+
+# ... Or to optimize a portfolio subject to a beta target.
+
+# Remedy?
+	#	shrink the estimates .... shrinkage or bayesian estimation
+	#	or ... re-estimate the betas.
+
